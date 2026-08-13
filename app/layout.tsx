@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     siteName: "লোকাল বাস",
     images: [
       {
-        url: "/images/logo.png",
+        url: "/images/local-bus-logo-final.png",
         width: 1200,
         height: 630,
         alt: "লোকাল বাস",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "লোকাল বাস",
     description: "একটা বাস, একটা পথ, আর কিছু পুরোনো গান।",
-    images: ["/images/logo.png"],
+    images: ["/images/local-bus-logo-final.png"],
   },
 };
 

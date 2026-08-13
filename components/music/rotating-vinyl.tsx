@@ -10,7 +10,7 @@ interface RotatingVinylProps {
 
 export function RotatingVinyl({ src, alt, isPlaying }: RotatingVinylProps) {
   return (
-    <div className="relative w-14 h-14 md:w-16 md:h-16 flex-shrink-0">
+    <div className="relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex-shrink-0">
       {/* Vinyl Outer Ring */}
       <div
         className={`relative w-full h-full rounded-full p-1 bg-gradient-to-tr from-neutral-900 via-neutral-800 to-neutral-900 border border-white/20 shadow-2xl overflow-hidden transition-all duration-300 ${
@@ -28,7 +28,7 @@ export function RotatingVinyl({ src, alt, isPlaying }: RotatingVinylProps) {
         {/* Thumbnail Image Center */}
         <div className="relative w-full h-full rounded-full overflow-hidden">
           <Image
-            src={src || "/images/logo.png"}
+            src={src || "/images/local-bus-logo-final.png"}
             alt={alt || "Album Artwork"}
             fill
             sizes="64px"

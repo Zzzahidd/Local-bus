@@ -63,7 +63,7 @@ export function ProgressBar({ currentTime, duration, onSeek }: ProgressBarProps)
       </div>
 
       {/* Time Readout (WCAG AAA Contrast > 12:1) */}
-      <div className="flex justify-between items-center text-xs font-mono text-neutral-100 tracking-wider font-medium">
+      <div className="flex justify-between items-center text-[10px] sm:text-xs font-mono text-neutral-100 tracking-wide sm:tracking-wider font-medium">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>

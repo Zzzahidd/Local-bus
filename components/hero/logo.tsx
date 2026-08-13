@@ -4,15 +4,17 @@ import Image from "next/image";
 
 export function CenterLogo() {
   return (
-    <div className="relative z-10 flex items-center justify-center pointer-events-none select-none px-4 max-w-4xl w-full mx-auto my-auto">
-      <div className="relative w-full max-w-[540px] md:max-w-[680px] lg:max-w-[760px] aspect-[3/1] transition-transform duration-500 hover:scale-[1.01]">
+    <div className="fixed inset-x-0 top-[15%] md:top-[14%] z-10 flex justify-center pointer-events-none select-none px-4">
+      <div className="relative w-[90vw] max-w-[480px] md:w-full md:max-w-[1080px] lg:max-w-[1150px] aspect-[3/2] md:aspect-[3/1] scale-[1.15] md:scale-[1.25] transition-transform duration-500 hover:scale-[1.28]">
         <Image
-          src="/images/logo.png"
+          src="/images/local-bus-logo-final.png"
           alt="লোকাল বাস"
           fill
+          unoptimized
           priority
-          sizes="(max-width: 768px) 90vw, (max-width: 1200px) 70vw, 760px"
-          className="object-contain filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.7)]"
+          sizes="(max-width: 768px) 90vw, (max-width: 1200px) 100vw, 1150px"
+          className="object-contain opacity-90 brightness-[0.97] filter drop-shadow-[0_8px_18px_rgba(0,0,0,0.38)]"
+          style={{ imageRendering: "auto" }}
         />
       </div>
     </div>

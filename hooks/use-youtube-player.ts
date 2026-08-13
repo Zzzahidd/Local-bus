@@ -9,6 +9,8 @@ export function useYouTubePlayer() {
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
   const isTransitioningRef = useRef(false);
   const lastVideoIdRef = useRef<string>("");
+  const skippedTrackCountRef = useRef(0);
+  const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isReady, setIsReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -21,7 +23,7 @@ export function useYouTubePlayer() {
     videoId: "",
     title: "লোকাল বাস — পথের গান",
     artist: "Nostalgic Tracks",
-    thumbnail: "/images/logo.png",
+    thumbnail: "/images/local-bus-logo-final.png",
     duration: 0,
   });
 
@@ -51,6 +53,23 @@ export function useYouTubePlayer() {
     } catch (e) {
       console.error("Error syncing video data:", e);
     }
+  }, []);
+
+  const skipUnavailableTrack = useCallback(() => {
+    if (!playerRef.current || skipTimerRef.current) return;
+
+    const playlistLength = playerRef.current.getPlaylist()?.length || 1;
+    if (skippedTrackCountRef.current >= playlistLength) {
+      setIsPlaying(false);
+      return;
+    }
+
+    isTransitioningRef.current = true;
+    skippedTrackCountRef.current += 1;
+    skipTimerRef.current = setTimeout(() => {
+      skipTimerRef.current = null;
+      playerRef.current?.nextVideo();
+    }, 600);
   }, []);
 
   // Track playback time without thrashing during track transitions
@@ -106,17 +125,14 @@ export function useYouTubePlayer() {
 
               if (state === window.YT.PlayerState.PLAYING) {
                 isTransitioningRef.current = false;
+                skippedTrackCountRef.current = 0;
                 setIsPlaying(true);
                 syncVideoData();
               } else if (state === window.YT.PlayerState.PAUSED) {
                 setIsPlaying(false);
               } else if (state === window.YT.PlayerState.ENDED) {
                 setIsPlaying(false);
-                isTransitioningRef.current = true;
                 setCurrentTime(0);
-                if (playerRef.current) {
-                  playerRef.current.nextVideo();
-                }
               } else if (
                 state === window.YT.PlayerState.CUED ||
                 state === window.YT.PlayerState.BUFFERING ||
@@ -127,12 +143,8 @@ export function useYouTubePlayer() {
             },
             onError: (err) => {
               console.warn("YouTube Player error code:", err.data);
-              // Auto-advance if a video in the playlist is restricted/unavailable
-              if (playerRef.current) {
-                setTimeout(() => {
-                  playerRef.current?.nextVideo();
-                }, 500);
-              }
+              // Some playlist videos cannot be embedded; skip each one once.
+              skipUnavailableTrack();
             },
           },
         });
@@ -148,7 +160,10 @@ export function useYouTubePlayer() {
     } else {
       initPlayer();
     }
-  }, [syncVideoData]);
+    return () => {
+      if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
+    };
+  }, [skipUnavailableTrack, syncVideoData]);
 
   const togglePlay = useCallback(() => {
     if (!playerRef.current || !isReady) return;
@@ -162,6 +177,7 @@ export function useYouTubePlayer() {
   const nextTrack = useCallback(() => {
     if (!playerRef.current || !isReady) return;
     isTransitioningRef.current = true;
+    skippedTrackCountRef.current = 0;
     setCurrentTime(0);
     playerRef.current.nextVideo();
     
@@ -181,6 +197,7 @@ export function useYouTubePlayer() {
       setCurrentTime(0);
     } else {
       isTransitioningRef.current = true;
+      skippedTrackCountRef.current = 0;
       setCurrentTime(0);
       playerRef.current.previousVideo();
       setTimeout(() => {
