@@ -23,14 +23,14 @@ export function Header() {
           href="https://music.youtube.com/playlist?list=PLgNK35oqdq98pPJSS_aaa_BVKFK7cc2Tq&si=XTbp03lHSFlMOS3M"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-xs font-medium text-white/90 hover:text-white hover:bg-black/60 transition-all shadow-lg group"
-          aria-label="Listen on YT Music"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-neutral-950/80 backdrop-blur-md border border-white/20 text-xs md:text-sm font-semibold text-white hover:bg-black focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none transition-all shadow-lg group"
+          aria-label="Listen on YT Music (opens in new tab)"
         >
-          <svg className="w-3.5 h-3.5 fill-red-500" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 fill-red-500 flex-shrink-0" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.2c-3.972 0-7.2-3.228-7.2-7.2s3.228-7.2 7.2-7.2 7.2 3.228 7.2 7.2-3.228 7.2-7.2 7.2zm0-11.4c-2.316 0-4.2 1.884-4.2 4.2s1.884 4.2 4.2 4.2 4.2-1.884 4.2-4.2-1.884-4.2-4.2-4.2zm-1.2 6.12v-3.84l3.36 1.92-3.36 1.92z"/>
           </svg>
           <span>YT Music</span>
-          <ExternalLink className="w-3 h-3 opacity-70 group-hover:opacity-100 transition-opacity" />
+          <ExternalLink className="w-3.5 h-3.5 text-neutral-300 group-hover:text-white transition-colors" aria-hidden="true" />
         </a>
       </div>
     </header>

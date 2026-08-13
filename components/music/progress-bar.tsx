@@ -40,12 +40,14 @@ export function ProgressBar({ currentTime, duration, onSeek }: ProgressBarProps)
         onClick={handleClick}
         onTouchStart={handleTouch}
         onTouchMove={handleTouch}
-        className="relative w-full h-2 rounded-full bg-white/20 hover:bg-white/30 cursor-pointer transition-all duration-200 group flex items-center"
+        className="relative w-full h-2.5 rounded-full bg-neutral-700/80 hover:bg-neutral-600 cursor-pointer transition-all duration-200 group flex items-center focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+        tabIndex={0}
         role="slider"
         aria-label="Seek progress"
         aria-valuemin={0}
-        aria-valuemax={duration}
-        aria-valuenow={currentTime}
+        aria-valuemax={Math.round(duration)}
+        aria-valuenow={Math.round(currentTime)}
+        aria-valuetext={`${formatTime(currentTime)} of ${formatTime(duration)}`}
       >
         {/* Filled Track */}
         <div
@@ -55,13 +57,13 @@ export function ProgressBar({ currentTime, duration, onSeek }: ProgressBarProps)
 
         {/* Handle Pill/Dot */}
         <div
-          className="absolute w-3 h-3 rounded-full bg-white shadow-md transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+          className="absolute w-3.5 h-3.5 rounded-full bg-white shadow-md transform -translate-x-1/2 opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all duration-150"
           style={{ left: `${progressPercent}%` }}
         />
       </div>
 
-      {/* Time Readout */}
-      <div className="flex justify-between items-center text-[11px] font-mono text-white/70 tracking-wider">
+      {/* Time Readout (WCAG AAA Contrast > 12:1) */}
+      <div className="flex justify-between items-center text-xs font-mono text-neutral-100 tracking-wider font-medium">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>
