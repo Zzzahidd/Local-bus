@@ -7,6 +7,9 @@ const PLAYLIST_ID = "PLgNK35oqdq98pPJSS_aaa_BVKFK7cc2Tq";
 
 export function useYouTubePlayer() {
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
+  const isTransitioningRef = useRef(false);
+  const lastVideoIdRef = useRef<string>("");
+
   const [isReady, setIsReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -22,31 +25,17 @@ export function useYouTubePlayer() {
     duration: 0,
   });
 
-  // Track playback time
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isPlaying && playerRef.current) {
-      timer = setInterval(() => {
-        if (playerRef.current) {
-          const cur = playerRef.current.getCurrentTime() || 0;
-          const dur = playerRef.current.getDuration() || 0;
-          setCurrentTime(cur);
-          if (dur > 0 && dur !== duration) {
-            setDuration(dur);
-          }
-        }
-      }, 300);
-    }
-    return () => clearInterval(timer);
-  }, [isPlaying, duration]);
-
-  // Sync current video metadata from player
+  // Sync current video metadata from player safely
   const syncVideoData = useCallback(() => {
     if (!playerRef.current) return;
     try {
       const data = playerRef.current.getVideoData();
       const dur = playerRef.current.getDuration() || 0;
       if (data && data.video_id) {
+        if (data.video_id !== lastVideoIdRef.current) {
+          lastVideoIdRef.current = data.video_id;
+          setCurrentTime(0);
+        }
         setCurrentSong({
           id: data.video_id,
           videoId: data.video_id,
@@ -55,12 +44,36 @@ export function useYouTubePlayer() {
           thumbnail: `https://img.youtube.com/vi/${data.video_id}/hqdefault.jpg`,
           duration: dur,
         });
-        setDuration(dur);
+        if (dur > 0) {
+          setDuration(dur);
+        }
       }
     } catch (e) {
       console.error("Error syncing video data:", e);
     }
   }, []);
+
+  // Track playback time without thrashing during track transitions
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isPlaying && playerRef.current) {
+      timer = setInterval(() => {
+        if (playerRef.current && !isTransitioningRef.current) {
+          try {
+            const cur = playerRef.current.getCurrentTime() || 0;
+            const dur = playerRef.current.getDuration() || 0;
+            setCurrentTime(cur);
+            if (dur > 0 && Math.abs(dur - duration) > 1) {
+              setDuration(dur);
+            }
+          } catch (err) {
+            // Ignore temporary API polling error during state change
+          }
+        }
+      }, 250);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying, duration]);
 
   // Initialize YouTube Iframe API
   useEffect(() => {
@@ -89,25 +102,37 @@ export function useYouTubePlayer() {
             },
             onStateChange: (event) => {
               const state = event.data;
-              if (window.YT) {
-                if (state === window.YT.PlayerState.PLAYING) {
-                  setIsPlaying(true);
-                  syncVideoData();
-                } else if (state === window.YT.PlayerState.PAUSED) {
-                  setIsPlaying(false);
-                } else if (state === window.YT.PlayerState.ENDED) {
-                  setIsPlaying(false);
-                  // Next song automatically
-                  if (playerRef.current) {
-                    playerRef.current.nextVideo();
-                  }
-                } else if (state === window.YT.PlayerState.CUED || state === window.YT.PlayerState.BUFFERING) {
-                  syncVideoData();
+              if (!window.YT) return;
+
+              if (state === window.YT.PlayerState.PLAYING) {
+                isTransitioningRef.current = false;
+                setIsPlaying(true);
+                syncVideoData();
+              } else if (state === window.YT.PlayerState.PAUSED) {
+                setIsPlaying(false);
+              } else if (state === window.YT.PlayerState.ENDED) {
+                setIsPlaying(false);
+                isTransitioningRef.current = true;
+                setCurrentTime(0);
+                if (playerRef.current) {
+                  playerRef.current.nextVideo();
                 }
+              } else if (
+                state === window.YT.PlayerState.CUED ||
+                state === window.YT.PlayerState.BUFFERING ||
+                state === window.YT.PlayerState.UNSTARTED
+              ) {
+                syncVideoData();
               }
             },
             onError: (err) => {
               console.warn("YouTube Player error code:", err.data);
+              // Auto-advance if a video in the playlist is restricted/unavailable
+              if (playerRef.current) {
+                setTimeout(() => {
+                  playerRef.current?.nextVideo();
+                }, 500);
+              }
             },
           },
         });
@@ -135,20 +160,36 @@ export function useYouTubePlayer() {
   }, [isPlaying, isReady]);
 
   const nextTrack = useCallback(() => {
-    if (!playerRef.current) return;
+    if (!playerRef.current || !isReady) return;
+    isTransitioningRef.current = true;
+    setCurrentTime(0);
     playerRef.current.nextVideo();
-  }, []);
+    
+    // Ensure smooth continuous playback without needing a double click
+    setTimeout(() => {
+      if (playerRef.current && isPlaying) {
+        playerRef.current.playVideo();
+      }
+    }, 150);
+  }, [isReady, isPlaying]);
 
   const prevTrack = useCallback(() => {
-    if (!playerRef.current) return;
-    const cur = playerRef.current.getCurrentTime();
+    if (!playerRef.current || !isReady) return;
+    const cur = currentTime;
     if (cur > 3) {
       playerRef.current.seekTo(0, true);
       setCurrentTime(0);
     } else {
+      isTransitioningRef.current = true;
+      setCurrentTime(0);
       playerRef.current.previousVideo();
+      setTimeout(() => {
+        if (playerRef.current && isPlaying) {
+          playerRef.current.playVideo();
+        }
+      }, 150);
     }
-  }, []);
+  }, [isReady, currentTime, isPlaying]);
 
   const seek = useCallback((time: number) => {
     if (!playerRef.current) return;
