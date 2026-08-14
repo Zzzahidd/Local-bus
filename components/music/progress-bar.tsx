@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, MouseEvent, TouchEvent } from "react";
+import { useRef, useState, MouseEvent, PointerEvent } from "react";
 import { formatTime } from "@/lib/utils";
 
 interface ProgressBarProps {
@@ -11,26 +11,59 @@ interface ProgressBarProps {
 
 export function ProgressBar({ currentTime, duration, onSeek }: ProgressBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const [dragTime, setDragTime] = useState<number | null>(null);
 
-  const handleSeek = (clientX: number) => {
-    if (!barRef.current || duration <= 0) return;
+  const getTimeAtPosition = (clientX: number) => {
+    if (!barRef.current || duration <= 0) return null;
     const rect = barRef.current.getBoundingClientRect();
     const clickX = Math.max(0, Math.min(clientX - rect.left, rect.width));
     const percentage = clickX / rect.width;
-    onSeek(percentage * duration);
+    return percentage * duration;
+  };
+
+  const handleSeek = (clientX: number) => {
+    const time = getTimeAtPosition(clientX);
+    if (time !== null) onSeek(time);
   };
 
   const handleClick = (e: MouseEvent<HTMLDivElement>) => {
     handleSeek(e.clientX);
   };
 
-  const handleTouch = (e: TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length > 0) {
-      handleSeek(e.touches[0].clientX);
+  const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    isDraggingRef.current = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragTime(getTimeAtPosition(e.clientX));
+  };
+
+  const handlePointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    if (isDraggingRef.current) {
+      setDragTime(getTimeAtPosition(e.clientX));
     }
   };
 
-  const progressPercent = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
+  const handlePointerEnd = (e: PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current) return;
+    const time = getTimeAtPosition(e.clientX);
+    isDraggingRef.current = false;
+    setDragTime(null);
+    if (time !== null) onSeek(time);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  const handlePointerCancel = (e: PointerEvent<HTMLDivElement>) => {
+    isDraggingRef.current = false;
+    setDragTime(null);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  const displayedTime = dragTime ?? currentTime;
+  const progressPercent = duration > 0 ? Math.min(100, (displayedTime / duration) * 100) : 0;
 
   return (
     <div className="w-full flex flex-col gap-1.5 select-none">
@@ -38,16 +71,18 @@ export function ProgressBar({ currentTime, duration, onSeek }: ProgressBarProps)
       <div
         ref={barRef}
         onClick={handleClick}
-        onTouchStart={handleTouch}
-        onTouchMove={handleTouch}
-        className="relative w-full h-2.5 rounded-full bg-neutral-700/80 hover:bg-neutral-600 cursor-pointer transition-all duration-200 group flex items-center focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerCancel}
+        className="relative w-full h-2.5 rounded-full bg-neutral-700/80 hover:bg-neutral-600 cursor-pointer touch-none transition-all duration-200 group flex items-center focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
         tabIndex={0}
         role="slider"
         aria-label="Seek progress"
         aria-valuemin={0}
         aria-valuemax={Math.round(duration)}
-        aria-valuenow={Math.round(currentTime)}
-        aria-valuetext={`${formatTime(currentTime)} of ${formatTime(duration)}`}
+        aria-valuenow={Math.round(displayedTime)}
+        aria-valuetext={`${formatTime(displayedTime)} of ${formatTime(duration)}`}
       >
         {/* Filled Track */}
         <div
@@ -64,7 +99,7 @@ export function ProgressBar({ currentTime, duration, onSeek }: ProgressBarProps)
 
       {/* Time Readout (WCAG AAA Contrast > 12:1) */}
       <div className="flex justify-between items-center text-[10px] sm:text-xs font-mono text-neutral-100 tracking-wide sm:tracking-wider font-medium">
-        <span>{formatTime(currentTime)}</span>
+        <span>{formatTime(displayedTime)}</span>
         <span>{formatTime(duration)}</span>
       </div>
     </div>

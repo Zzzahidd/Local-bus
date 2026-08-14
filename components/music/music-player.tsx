@@ -20,13 +20,12 @@ export function MusicPlayer() {
     prevTrack,
     seek,
     setVolume,
-    toggleMute,
   } = useYouTubePlayer();
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   return (
-    <div className="fixed bottom-4 md:bottom-12 left-1/2 -translate-x-1/2 z-40 w-[calc(100%_-_1.5rem)] sm:w-[92%] max-w-[600px] pointer-events-auto">
+    <div className="fixed bottom-14 md:bottom-12 left-1/2 -translate-x-1/2 z-40 w-[calc(100%_-_1.5rem)] sm:w-[92%] max-w-[600px] pointer-events-auto">
       {/* Hidden YouTube Iframe Container */}
       <div id="youtube-hidden-player" className="hidden pointer-events-none" />
 
@@ -103,15 +102,12 @@ export function MusicPlayer() {
           </button>
 
           {/* Volume Control */}
-          <div
-            className="relative hidden sm:flex items-center"
-            onMouseEnter={() => setShowVolumeSlider(true)}
-            onMouseLeave={() => setShowVolumeSlider(false)}
-          >
+          <div className="relative hidden sm:flex items-center">
             <button
-              onClick={toggleMute}
+              onClick={() => setShowVolumeSlider((isOpen) => !isOpen)}
               className="p-2 rounded-full text-white hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none transition-all"
-              aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+              aria-label="Adjust volume"
+              aria-expanded={showVolumeSlider}
             >
               {isMuted || volume === 0 ? (
                 <VolumeX className="w-4 h-4 text-red-400" />

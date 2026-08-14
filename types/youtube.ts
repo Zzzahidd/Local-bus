@@ -16,6 +16,8 @@ export interface YouTubePlayerInstance {
   seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
   nextVideo: () => void;
   previousVideo: () => void;
+  playVideoAt: (index: number) => void;
+  loadVideoById: (videoId: string) => void;
   getVolume: () => number;
   setVolume: (volume: number) => void;
   mute: () => void;

@@ -9,6 +9,8 @@ export function useYouTubePlayer() {
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
   const isTransitioningRef = useRef(false);
   const lastVideoIdRef = useRef<string>("");
+  const playbackHistoryRef = useRef<string[]>([]);
+  const isHistoryNavigationRef = useRef(false);
   const skippedTrackCountRef = useRef(0);
   const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -37,6 +39,11 @@ export function useYouTubePlayer() {
         if (data.video_id !== lastVideoIdRef.current) {
           lastVideoIdRef.current = data.video_id;
           setCurrentTime(0);
+          if (isHistoryNavigationRef.current) {
+            isHistoryNavigationRef.current = false;
+          } else if (playbackHistoryRef.current.at(-1) !== data.video_id) {
+            playbackHistoryRef.current.push(data.video_id);
+          }
         }
         setCurrentSong({
           id: data.video_id,
@@ -191,22 +198,30 @@ export function useYouTubePlayer() {
 
   const prevTrack = useCallback(() => {
     if (!playerRef.current || !isReady) return;
-    const cur = currentTime;
-    if (cur > 3) {
-      playerRef.current.seekTo(0, true);
-      setCurrentTime(0);
-    } else {
-      isTransitioningRef.current = true;
-      skippedTrackCountRef.current = 0;
-      setCurrentTime(0);
-      playerRef.current.previousVideo();
-      setTimeout(() => {
-        if (playerRef.current && isPlaying) {
-          playerRef.current.playVideo();
-        }
-      }, 150);
+    const player = playerRef.current;
+    isTransitioningRef.current = true;
+    skippedTrackCountRef.current = 0;
+    setCurrentTime(0);
+
+    if (playbackHistoryRef.current.length > 1) {
+      playbackHistoryRef.current.pop();
+      const previousVideoId = playbackHistoryRef.current.at(-1);
+      if (previousVideoId) {
+        isHistoryNavigationRef.current = true;
+        player.loadVideoById(previousVideoId);
+        return;
+      }
     }
-  }, [isReady, currentTime, isPlaying]);
+
+    const playlist = player.getPlaylist() || [];
+    const currentIndex = player.getPlaylistIndex();
+    if (playlist.length > 0 && currentIndex >= 0) {
+      player.playVideoAt((currentIndex - 1 + playlist.length) % playlist.length);
+      return;
+    }
+
+    player.previousVideo();
+  }, [isReady]);
 
   const seek = useCallback((time: number) => {
     if (!playerRef.current) return;
